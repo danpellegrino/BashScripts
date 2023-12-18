@@ -25,7 +25,7 @@ main ()
     echo "Please run this script on a physical machine."
     exit
   fi
-  if ! grep -q vmx /proc/cpuinfo; then
+  if [ ! grep -q vmx /proc/cpuinfo ] || [ ! grep -q svm /proc/cpuinfo ]; then
     echo "Virtualization is not enabled."
     exit
   fi
@@ -86,6 +86,7 @@ main ()
   # Source: https://serverfault.com/questions/803283/how-do-i-list-virsh-networks-without-sudo
   if [ -f /etc/libvirt/libvirt.conf ]; then
     sed -i 's/#uri_default = "qemu:\/\/\/system"/uri_default = "qemu:\/\/\/system"/g' /etc/libvirt/libvirt.conf
+    mkdir -p $USER_HOME/.config/libvirt > /dev/null 2>&1
     cp /etc/libvirt/libvirt.conf $USER_HOME/.config/libvirt/libvirt.conf
     chown $SUDO_USER:$SUDO_USER $USER_HOME/.config/libvirt/libvirt.conf
     echo "The user $SUDO_USER can now run virsh without sudo."
