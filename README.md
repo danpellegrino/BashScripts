@@ -16,6 +16,7 @@ This repository contains a collection of custom Bash scripts for various purpose
 ### 2. `automation/`
 
 ### 3. `system/`
+- `kernel-update-sign-modules.sh`: Resigns my Secure Boot Keys after a Kernel Update. 
 - `qemu_setup.sh`: Sets up automates the setup process for creating virtual machines using various tools.
 
 ## Usage
