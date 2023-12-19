@@ -165,10 +165,6 @@ main ()
   echo "Enter the user password:"
   chroot /mnt passwd "$USERNAME"
 
-  # Add the user to the sudo group
-  chroot /mnt usermod -aG sudo "$USERNAME"
-
-
 echo "Entering chroot, installing Linux kernel and Grub"
 cat << EOF | chroot /mnt
   set -e
@@ -202,6 +198,8 @@ cat << EOF | chroot /mnt
 
   update-initramfs -u -k all
 EOF
+  # Add the user to the sudo group
+  chroot /mnt /usr/sbin/usermod -aG sudo "$USERNAME"
 }
 
 main "$@"
