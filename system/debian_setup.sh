@@ -198,6 +198,8 @@ cat << EOF | chroot /mnt
   echo "Updating Grub..."
   grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian
   update-grub
+
+  update-initramfs -u -k all
 EOF
 }
 
