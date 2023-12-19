@@ -32,14 +32,14 @@ main ()
     exit 1
   fi
 
-  if [[ -f /var/run/reboot-required ]]; then
+  if [[ -f /var/lib/shim-signed/mok/reboot-required ]]; then
     after_reboot
-    rm /var/run/reboot-required
+    rm /var/lib/shim-signed/mok/reboot-required
     rm /var/lib/shim-signed/mok/password
   else
     before_reboot
-    touch /var/run/reboot-required
-    sleep 5
+    touch /var/lib/shim-signed/mok/reboot-required
+    sleep 10
     reboot
   fi
 
@@ -78,7 +78,7 @@ before_reboot ()
 
   openssl x509 -inform der -in /var/lib/shim-signed/mok/MOK.der -out /var/lib/shim-signed/mok/MOK.pem
 
-  mokutil --import /var/lib/shim-signed/mok/MOK.der --pass $(cat /var/lib/shim-signed/mok/password)
+  mokutil --import /var/lib/shim-signed/mok/MOK.der
 
   echo "Rebooting the system to enroll the key pair."
   echo "Please follow the instructions on the screen to enroll the key pair."
@@ -93,6 +93,14 @@ after_reboot ()
   # Install the Nvidia drivers
   apt-get install nvidia-settings nvidia-kernel-dkms nvidia-cuda-mps nvidia-driver nvidia-cuda-mps vulkan-tools firmware-linux firmware-linux-nonfree firmware-misc-nonfree nvidia-kernel-dkms -y
 
+  # Adding key to DKMS (/etc/dkms/framework.conf)
+  echo "module_signing_key=/var/lib/shim-signed/mok/MOK.priv" >> /etc/dkms/framework.conf
+  echo "mok_certificate=/var/lib/shim-signed/mok/MOK.der" >> /etc/dkms/framework.conf
+  echo "sign_tool=/etc/dkms/sign_helper.sh" >> /etc/dkms/framework.conf
+
+  echo "/lib/modules/"$1"/build/scripts/sign-file sha512 /root/.mok/client.priv /root/.mok/client.der "$2"" > /etc/dkms/sign_helper.sh
+  chmod +x /etc/dkms/sign_helper.sh
+
   # Sign the Nvidia kernel module
   VERSION="$(uname -r)"
   SHORT_VERSION="$(uname -r | cut -d . -f 1-2)"
@@ -100,15 +108,9 @@ after_reboot ()
   KBUILD_DIR=/usr/lib/linux-kbuild-$SHORT_VERSION
 
   # Sign the Nvidia kernel module
-  for i in $(find $MODULES_DIR/updates/dkms -type f -name '*.ko'); do
-    echo "Signing $i"
-    sleep 1
-    --preserve-environment=$(cat /var/lib/shim-signed/mok/password) \
-      "$KBUILD_DIR"/scripts/sign-file sha256 \
-      /var/lib/shim-signed/mok/MOK.priv \
-      /var/lib/shim-signed/mok/MOK.der "$i"
-  done
-
+  sbsign --key MOK.priv --cert MOK.pem "/boot/vmlinuz-$VERSION" --output "/boot/vmlinuz-$VERSION.tmp"
+  sudo mv "/boot/vmlinuz-$VERSION.tmp" "/boot/vmlinuz-$VERSION"
+  
   # Update the initramfs
   # This is done to ensure that the Nvidia kernel module is signed during boot
   update-initramfs -k all -u
