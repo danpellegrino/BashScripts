@@ -108,19 +108,8 @@ main ()
 
   # Install debian
   apt install debootstrap -y
-  debootstrap --include linux-image-amd64,grub-efi,locales --arch amd64 bookworm /mnt
+  debootstrap --variant=minbase --arch amd64 bookworm /mnt http://deb.debian.org/debian/
 
-  # Copy the mounted file systems into the new system
-  echo "Copying mounted file systems into the new system..."
-  cp /etc/mtab /mnt/etc/mtab
-
-  # Bind the virtual filesystems to the new system
-  echo "Binding virtual filesystems to the new system..."
-  mount --bind /dev /mnt/dev
-  mount --bind /dev/pts /mnt/dev/pts
-  mount --bind /proc /mnt/proc
-  mount --bind /sys /mnt/sys
-  
   # Install arch-install-scripts
   apt install arch-install-scripts -y
 
@@ -128,84 +117,91 @@ main ()
   echo "Generating fstab..."
   genfstab -U /mnt >> /mnt/etc/fstab
 
-  # Chroot into the new system
-  echo "Chrooting into the new system..."
-chroot /mnt /bin/bash -x <<'EOF'
   # Set the apt sources
   echo "deb http://deb.debian.org/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list
   echo "deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list
   echo "deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list
   echo "deb http://deb.debian.org/debian/ bookworm-backports main contrib non-free non-free-firmware" >> /etc/apt/sources.list
 
-  # Update the package database
-  apt update
+  echo $HOSTNAME > /mnt/etc/hostname
 
-  # Install the core packages
-  apt install firmware-linux firmware-linux-nonfree sudo vim git -y
-
-  # Set the timezone
-  dpkg-reconfigure tzdata
-
-  # Set the locale
-  dpkg-reconfigure locales
-
-  # Set the hostname
-  echo "$HOSTNAME" > /etc/hostname
-
-  # Set the hosts file
-  echo "127.0.0.1 localhost" > /etc/hosts
-  echo "127.0.1.1 $HOSTNAME.lan $HOSTNAME" >> /etc/hosts
-  echo "::1 localhost ip6-localhost ip6-loopback" >> /etc/hosts
-  echo "ff02::1 ip6-allnodes" >> /etc/hosts
-  echo "ff02::2 ip6-allrouters" >> /etc/hosts
+  echo "127.0.0.1 localhost" > /mnt/etc/hosts
+  echo "127.0.1.1 $HOSTNAME.lan $HOSTNAME" >> /mnt/etc/hosts
+  echo "::1 localhost ip6-localhost ip6-loopback" >> /mnt/etc/hosts
+  echo "ff02::1 ip6-allnodes" >> /mnt/etc/hosts
+  echo "ff02::2 ip6-allrouters" >> /mnt/etc/hosts
 
   # Detect the network interface
   net_interface=$(ip link | awk '/state UP/ {print $2}' | sed 's/://')
 
   # Configure the network
-  echo "auto lo" > /etc/network/interfaces
-  echo "iface lo inet loopback" >> /etc/network/interfaces
-  echo "" >> /etc/network/interfaces
-  echo "auto $net_interface" >> /etc/network/interfaces
-  echo "iface $net_interface inet dhcp" >> /etc/network/interfaces
-
-  # Set up network tools
-  apt install dhcpcd5 network-manager wireless-tools wpasupplicant dialog -y
-
-  # Set the root password
-  echo "Enter the root password:"
-  passwd
-
-  # Create a user
-  echo "Creating $USERNAME user..."
-  useradd "$USERNAME" -m -c "$NAME" -s /bin/bash
-  echo "Enter the user password:"
-  passwd "$USERNAME"
-
-  # Add the user to the sudo group
-  usermod -aG sudo "$USERNAME"
-  # Add the user to the wheel group
-  usermod -aG wheel "$USERNAME"
-
-  # Installing boot loader utilities
-  apt install efibootmgr btrfs-progs os-prober cryptsetup ntfs-3g mtools dosfstools zstd -y
+  echo "auto lo" > /mnt/etc/network/interfaces
+  echo "iface lo inet loopback" >> /mnt/etc/network/interfaces
+  echo "" >> /mnt/etc/network/interfaces
+  echo "auto $net_interface" >> /mnt/etc/network/interfaces
+  echo "iface $net_interface inet dhcp" >> /mnt/etc/network/interfaces
 
   # Set up encryption parameters
   echo "Setting up encryption parameters..."
-  echo "cryptroot UUID=$(blkid -s UUID -o value /dev/$crypt) none luks,discard" > /etc/crypttab
+  echo "cryptroot UUID=$(blkid -s UUID -o value /dev/$crypt) none luks,discard" > /mnt/etc/crypttab
 
-  # Update grub
-  echo "Updating grub..."
+  # Mount virtual filesystems
+  echo "Mounting virtual filesystems..."
+  for dir in dev proc sys run; do
+    mount --rbind /$dir /mnt/$dir && mount --make-rslave /mnt/$dir
+  done
+  cp /etc/resolv.conf /mnt/etc/resolv.conf
 
-  grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=DEBIAN
+  # Chroot into the new system
+  echo "Chrooting into the new system..."
 
+  # Set root password
+  echo "Enter the root password:"
+  chroot /mnt passwd
+
+  # Create a user
+  echo "Creating $USERNAME user..."
+  chroot /mnt useradd "$USERNAME" -m -c "$NAME" -s /bin/bash
+  echo "Enter the user password:"
+  chroot /mnt passwd "$USERNAME"
+
+  # Add the user to the sudo group
+  usermod -aG sudo "$USERNAME"
+
+
+echo "Entering chroot, installing Linux kernel and Grub"
+cat << EOF | chroot /mnt
+  set -e
+  apt-get update
+  apt-get install -y  linux-image-amd64 \
+                      linux-headers-amd64 \
+                      grub-efi-amd64 \
+                      grub-efi-amd64-bin \
+                      grub-efi-amd64-signed \
+                      efibootmgr \
+                      btrfs-progs \
+                      os-prober \
+                      cryptsetup \
+                      ntfs-3g \
+                      mtools \
+                      dosfstools \
+                      zstd \
+                      locales \
+                      dialog \
+                      network-manager \
+                      wireless-tools \
+                      wpasupplicant \
+                      dhcpcd5 \
+                      grub2
+  
+  dpkg-reconfigure tzdata
+
+  dpkg-reconfigure locales
+
+  echo "Updating Grub..."
+  grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian
   update-grub
-
-  update-initramfs -u -k all
 EOF
-    umount -a
-
-    reboot
 }
 
 main "$@"
