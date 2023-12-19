@@ -180,6 +180,7 @@ cat << EOF | chroot /mnt
                       btrfs-progs \
                       os-prober \
                       cryptsetup \
+                      cryptsetup-initramfs \
                       ntfs-3g \
                       mtools \
                       dosfstools \
