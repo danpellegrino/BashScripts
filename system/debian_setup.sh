@@ -189,8 +189,7 @@ cat << EOF | chroot /mnt
                       network-manager \
                       wireless-tools \
                       wpasupplicant \
-                      dhcpcd5 \
-                      grub2
+                      dhcpcd5
   
   dpkg-reconfigure tzdata
 
