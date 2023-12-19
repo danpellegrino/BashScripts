@@ -175,9 +175,7 @@ cat << EOF | chroot /mnt
   apt-get update
   apt-get install -y  linux-image-amd64 \
                       linux-headers-amd64 \
-                      grub-efi-amd64 \
-                      grub-efi-amd64-bin \
-                      grub-efi-amd64-signed \
+                      grub-efi \
                       efibootmgr \
                       btrfs-progs \
                       os-prober \
