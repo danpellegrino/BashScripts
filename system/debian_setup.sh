@@ -108,7 +108,7 @@ main ()
 
   # Install debian
   apt install debootstrap -y
-  debootstrap --variant=minbase --arch amd64 bookworm /mnt http://deb.debian.org/debian/
+  debootstrap --arch amd64 stable /mnt https://deb.debian.org/debian
 
   # Install arch-install-scripts
   apt install arch-install-scripts -y
