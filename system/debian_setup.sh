@@ -83,11 +83,12 @@ main ()
   # Mount the subvolumes
   umount /mnt
   mount -o subvol=@,noatime,compress=zstd:1 /dev/mapper/cryptroot /mnt
-  mkdir -p /mnt/{boot/efi,.snapshots,home,root,var/log,var/lib/AccountsService,var/lib/gdm3,tmp,opt,var/lib/libvirt/images,var/lib/containers}
+  mkdir -p /mnt/{boot,.snapshots,home,root,var/log,var/lib/AccountsService,var/lib/gdm3,tmp,opt,var/lib/libvirt/images,var/lib/containers}
 
   # Mount the boot partition
   echo "Mounting boot partition..."
   mount "/dev/$boot" /mnt/boot
+  mkdir -p /mnt/boot/efi
   mount "/dev/$efi" /mnt/boot/efi
 
   # Mount the subvolumes
