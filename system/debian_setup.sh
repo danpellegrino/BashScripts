@@ -166,7 +166,7 @@ main ()
   chroot /mnt passwd "$USERNAME"
 
   # Add the user to the sudo group
-  usermod -aG sudo "$USERNAME"
+  chroot /mnt usermod -aG sudo "$USERNAME"
 
 
 echo "Entering chroot, installing Linux kernel and Grub"
