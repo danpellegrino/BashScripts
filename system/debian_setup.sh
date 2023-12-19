@@ -192,13 +192,10 @@ chroot /mnt /bin/bash -x <<'EOF'
 
   # Set up encryption parameters
   echo "Setting up encryption parameters..."
-  echo "cryptroot UUID=$(blkid -s UUID -o value /dev/$crypt) none luks" > /etc/crypttab
+  echo "cryptroot UUID=$(blkid -s UUID -o value /dev/$crypt) none luks,discard" > /etc/crypttab
 
   # Update grub
   echo "Updating grub..."
-  sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="quiet cryptdevice=UUID=$(blkid -s UUID -o value /dev/$crypt):cryptroot"/' /etc/default/grub
-  sed -i 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cryptdevice=UUID=$(blkid -s UUID -o value /dev/$crypt):cryptroot"/' /etc/default/grub
-  echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
 
   grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=DEBIAN
 
