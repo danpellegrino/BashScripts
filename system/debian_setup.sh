@@ -171,6 +171,7 @@ cat << EOF | chroot /mnt
   apt-get update
   apt-get install -y  linux-image-amd64 \
                       linux-headers-amd64 \
+                      firmware-linux \
                       grub-efi \
                       efibootmgr \
                       btrfs-progs \
@@ -186,7 +187,8 @@ cat << EOF | chroot /mnt
                       network-manager \
                       wireless-tools \
                       wpasupplicant \
-                      dhcpcd5
+                      dhcpcd5 \
+                      sudo
   
   dpkg-reconfigure tzdata
 
@@ -200,6 +202,7 @@ cat << EOF | chroot /mnt
 EOF
   # Add the user to the sudo group
   chroot /mnt /usr/sbin/usermod -aG sudo "$USERNAME"
+  chroot /mnt apt install firmware-iwlwifi -y
 }
 
 main "$@"
