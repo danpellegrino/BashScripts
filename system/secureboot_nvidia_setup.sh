@@ -57,6 +57,9 @@ before_reboot ()
     exit 1
   fi
 
+  # Create the directory for the key pair
+  mkdir -p /var/lib/shim-signed/mok
+
   # Create a password for the key pair
   # The password will be used to sign the Nvidia kernel module
   read -s -p "Enter a password for the key pair (MOK PEM pass phrase): " PASSWORD
