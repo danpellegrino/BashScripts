@@ -144,13 +144,10 @@ chroot /mnt /bin/bash -x <<'EOF'
   apt install firmware-linux firmware-linux-nonfree sudo vim git -y
 
   # Set the timezone
-  ln -sf /usr/share/zoneinfo/America/New_York /etc/localtime
-  hwclock --systohc
+  dpkg-reconfigure tzdata
 
   # Set the locale
-  sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
-  locale-gen
-  echo "LANG=en_US.UTF-8" > /etc/locale.conf
+  dpkg-reconfigure locales
 
   # Set the hostname
   echo "$HOSTNAME" > /etc/hostname
