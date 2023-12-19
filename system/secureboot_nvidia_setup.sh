@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
-# This script is used to setup secure boot on Debian 12 (Bookworm) when using the proprietary Nvidia drivers.
+# secureboot_nvidia_setup.sh
+ # Author: Daniel Pellegrino
+ # Date Created: 12/18/2023
+ # Last Modified: 12/18/2023
+ # Description: This script is used to setup secure boot on Debian 12 (Bookworm) when using the proprietary Nvidia drivers.
+
 
 main ()
 {
@@ -18,7 +23,7 @@ main ()
   fi
 
   # Install the required packages
-  apt install -y sbsigntools mokutil
+  apt install -y sbsigntools mokutil -y
 
   # Check if secure boot is enabled
   if [[ $(mokutil --sb-state) != "SecureBoot enabled" ]]; then
@@ -40,6 +45,9 @@ main ()
 
 }
 
+# Functions
+
+# This function is run before the system reboots
 before_reboot ()
 {
   # Verify that a key pair does not already exist
@@ -76,10 +84,11 @@ before_reboot ()
   echo "After the system reboots, run this script again to finalize the installation."
 }
 
+# This function is run after the system reboots
 after_reboot ()
 {
   # Install the Nvidia drivers
-  apt-get install nvidia-settings nvidia-kernel-dkms nvidia-cuda-mps nvidia-driver nvidia-cuda-mps vulkan-tools firmware-linux firmware-linux-nonfree firmware-misc-nonfree nvidia-kernel-dkms 
+  apt-get install nvidia-settings nvidia-kernel-dkms nvidia-cuda-mps nvidia-driver nvidia-cuda-mps vulkan-tools firmware-linux firmware-linux-nonfree firmware-misc-nonfree nvidia-kernel-dkms -y
 
   # Sign the Nvidia kernel module
   VERSION="$(uname -r)"
