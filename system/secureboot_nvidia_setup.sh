@@ -23,7 +23,7 @@ main ()
   fi
 
   # Install the required packages
-  apt install -y sbsigntools mokutil -y
+  apt install -y sbsigntool mokutil -y
 
   # Check if secure boot is enabled
   if [[ $(mokutil --sb-state) != "SecureBoot enabled" ]]; then
