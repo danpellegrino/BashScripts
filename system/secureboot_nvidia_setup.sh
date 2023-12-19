@@ -94,7 +94,7 @@ after_reboot ()
   apt-get install nvidia-settings nvidia-kernel-dkms nvidia-cuda-mps nvidia-driver nvidia-cuda-mps vulkan-tools firmware-linux firmware-linux-nonfree firmware-misc-nonfree nvidia-kernel-dkms -y
 
   # Adding key to DKMS (/etc/dkms/framework.conf)
-  echo "module_signing_key=/var/lib/shim-signed/mok/MOK.priv" >> /etc/dkms/framework.conf
+  echo "mok_signing_key=/var/lib/shim-signed/mok/MOK.priv" >> /etc/dkms/framework.conf
   echo "mok_certificate=/var/lib/shim-signed/mok/MOK.der" >> /etc/dkms/framework.conf
   echo "sign_tool=/etc/dkms/sign_helper.sh" >> /etc/dkms/framework.conf
 
@@ -108,11 +108,13 @@ after_reboot ()
   KBUILD_DIR=/usr/lib/linux-kbuild-$SHORT_VERSION
 
   # Sign the Nvidia kernel module
-  sbsign --key MOK.priv --cert MOK.pem "/boot/vmlinuz-$VERSION" --output "/boot/vmlinuz-$VERSION.tmp"
-  sudo mv "/boot/vmlinuz-$VERSION.tmp" "/boot/vmlinuz-$VERSION"
+  sbsign --key /var/lib/shim-signed/mok/MOK.priv --cert /var/lib/shim-signed/mok/MOK.pem "/boot/vmlinuz-$VERSION" --output "/boot/vmlinuz-$VERSION.tmp"
+  mv "/boot/vmlinuz-$VERSION.tmp" "/boot/vmlinuz-$VERSION"
   
-  # Update the initramfs
-  # This is done to ensure that the Nvidia kernel module is signed during boot
+  # Using your key to sign modules (Traditional Way)
+  read -s -p "Enter the password for the key pair (MOK PEM pass phrase): " KBUILD_SIGN_PIN
+
+  find "$MODULES_DIR/updates/dkms"/*.ko | while read i; do sudo --preserve-env=KBUILD_SIGN_PIN "$KBUILD_DIR"/scripts/sign-file sha256 /var/lib/shim-signed/mok/MOK.priv /var/lib/shim-signed/mok/MOK.der "$i" || break; done
   update-initramfs -k all -u
 }
 
