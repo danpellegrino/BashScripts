@@ -35,7 +35,6 @@ main ()
   if [[ -f /var/lib/shim-signed/mok/reboot-required ]]; then
     after_reboot
     rm /var/lib/shim-signed/mok/reboot-required
-    rm /var/lib/shim-signed/mok/password
   else
     before_reboot
     touch /var/lib/shim-signed/mok/reboot-required
@@ -60,21 +59,8 @@ before_reboot ()
   # Create the directory for the key pair
   mkdir -p /var/lib/shim-signed/mok
 
-  # Create a password for the key pair
-  # The password will be used to sign the Nvidia kernel module
-  read -s -p "Enter a password for the key pair (MOK PEM pass phrase): " PASSWORD
-
-  # Store the password for later use
-  touch /var/lib/shim-signed/mok/password
-  chmod 600 /var/lib/shim-signed/mok/password
-  echo $PASSWORD > /var/lib/shim-signed/mok/password
-
-  # Free up the password variable
-  # This is done to prevent the password from being stored in the shell history
-  unset PASSWORD
-
   # Create a key pair
-  openssl req -new -x509 -newkey rsa:2048 -subj "/CN=Nvidia/" -keyout /var/lib/shim-signed/mok/MOK.priv -outform DER -out /var/lib/shim-signed/mok/MOK.der -days 36500 --passout file:/var/lib/shim-signed/mok/password
+  openssl req -new -x509 -newkey rsa:2048 -subj "/CN=Nvidia/" -keyout /var/lib/shim-signed/mok/MOK.priv -outform DER -out /var/lib/shim-signed/mok/MOK.der -days 36500
 
   openssl x509 -inform der -in /var/lib/shim-signed/mok/MOK.der -out /var/lib/shim-signed/mok/MOK.pem
 
@@ -115,6 +101,9 @@ after_reboot ()
   read -s -p "Enter the password for the key pair (MOK PEM pass phrase): " KBUILD_SIGN_PIN
 
   find "$MODULES_DIR/updates/dkms"/*.ko | while read i; do sudo --preserve-env=KBUILD_SIGN_PIN "$KBUILD_DIR"/scripts/sign-file sha256 /var/lib/shim-signed/mok/MOK.priv /var/lib/shim-signed/mok/MOK.der "$i" || break; done
+
+  unset KBUILD_SIGN_PIN
+
   update-initramfs -k all -u
 }
 
