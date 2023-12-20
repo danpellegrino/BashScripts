@@ -12,6 +12,7 @@ USERNAME="daniel"
 NAME="Daniel"
 LUKS_NAME="cryptroot"
 TIMEZONE="America/New_York"
+DEBIAN_TARGET="trixie"
 
 main ()
 {
@@ -197,13 +198,16 @@ install_base_system ()
   apt update && apt install debootstrap -y
 
   # Install the base system
-  debootstrap --arch amd64 bookworm /mnt http://deb.debian.org/debian/
+  debootstrap --arch amd64 $DEBIAN_TARGET /mnt http://deb.debian.org/debian/
 
   # Set the apt sources
-  echo "deb http://deb.debian.org/debian/ bookworm main contrib non-free non-free-firmware" > /mnt/etc/apt/sources.list
-  echo "deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
-  echo "deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
-  echo "deb http://deb.debian.org/debian/ bookworm-backports main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
+  echo "deb http://deb.debian.org/debian/ $DEBIAN_TARGET main contrib non-free non-free-firmware" > /mnt/etc/apt/sources.list
+  echo "deb http://security.debian.org/debian-security $DEBIAN_TARGET-security main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
+  # Add the updates and backports repositories (only available for stable)
+  if [ "$DEBIAN_TARGET" = "bookworm" ]; then
+    echo "deb http://deb.debian.org/debian/ $DEBIAN_TARGET-updates main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
+    echo "deb http://deb.debian.org/debian/ $DEBIAN_TARGET-backports main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
+  fi
 
   # Install arch-install-scripts and generate fstab
   apt update && apt install arch-install-scripts -y
