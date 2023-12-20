@@ -159,6 +159,21 @@ format_and_mount ()
   mount "$BOOT" /mnt/boot
   mkdir -p /mnt/boot/efi
   mount "$EFI" /mnt/boot/efi
+}
+
+install_base_system ()
+{
+  # Install debootstrap
+  apt update && apt install debootstrap -y
+
+  # Install the base system
+  debootstrap --arch amd64 bookworm /mnt http://deb.debian.org/debian/
+
+  # Set the apt sources
+  echo "deb http://deb.debian.org/debian/ bookworm main contrib non-free non-free-firmware" > /mnt/etc/apt/sources.list
+  echo "deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
+  echo "deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
+  echo "deb http://deb.debian.org/debian/ bookworm-backports main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
 
   # Install arch-install-scripts and generate fstab
   apt update && apt install arch-install-scripts -y
@@ -172,21 +187,6 @@ format_and_mount ()
     mount --rbind /$dir /mnt/$dir && mount --make-rslave /mnt/$dir
   done
   cp /etc/resolv.conf /mnt/etc/resolv.conf
-}
-
-install_base_system ()
-{
-  # Install debootstrap
-  apt update && apt install debootstrap -y
-
-  # Set the apt sources
-  echo "deb http://deb.debian.org/debian/ bookworm main contrib non-free non-free-firmware" > /mnt/etc/apt/sources.list
-  echo "deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
-  echo "deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
-  echo "deb http://deb.debian.org/debian/ bookworm-backports main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
-
-  # Install the base system
-  debootstrap --arch amd64 bookworm /mnt http://deb.debian.org/debian/
 }
 
 setup_base_system ()
