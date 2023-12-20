@@ -402,11 +402,15 @@ secure_boot ()
 
 cat << EOF | chroot /mnt
   set -e
-  # Sign the Nvidia kernel module
-  VERSION="$(uname -r)"
-  SHORT_VERSION="$(uname -r | cut -d . -f 1-2)"
-  MODULES_DIR=/lib/modules/$VERSION
-  KBUILD_DIR=/usr/lib/linux-kbuild-$SHORT_VERSION
+  
+  # Get the kernel version
+  VERSION=\$(ls /lib/modules | head -n 1)
+  # Get the short version
+  SHORT_VERSION=\$(echo "\$VERSION" | cut -d . -f 1-2)
+  # Get the modules directory
+  MODULES_DIR="/lib/modules/\$VERSION"
+  # Get the kernel build directory
+  KBUILD_DIR="/usr/lib/linux-kbuild-\$SHORT_VERSION"
 
   # Sign the Nvidia kernel module
   sbsign --key /var/lib/shim-signed/mok/MOK.priv --cert /var/lib/shim-signed/mok/MOK.pem "/boot/vmlinuz-$VERSION" --output "/boot/vmlinuz-$VERSION.tmp"
