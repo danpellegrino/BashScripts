@@ -237,11 +237,10 @@ setup_network ()
   net_interface=$(ip link | awk '/state UP/ {print $2}' | sed 's/://')
 
   # Configure the network
-  echo "auto lo" > /mnt/etc/network/interfaces
-  echo "iface lo inet loopback" >> /mnt/etc/network/interfaces
+  echo "source /etc/network/interfaces.d/*" > /mnt/etc/network/interfaces
   echo "" >> /mnt/etc/network/interfaces
-  echo "auto $net_interface" >> /mnt/etc/network/interfaces
-  echo "iface $net_interface inet dhcp" >> /mnt/etc/network/interfaces
+  echo "auto lo" >> /mnt/etc/network/interfaces
+  echo "iface lo inet dhcp" >> /mnt/etc/network/interfaces
 }
 
 setup_root ()
@@ -365,13 +364,7 @@ cat << EOF | chroot /mnt
                       dhcpcd5 \
                       sudo
 
-  # Fix the network
-  apt remove --purge -y ifupdown
-  apt autoremove --purge -y
-  systemctl enable --now NetworkManager
-  # Update NetworkManager.conf
-  sed -i -e 's/managed=false/managed=true/' /etc/NetworkManager/NetworkManager.conf
-  
+  systemctl enable NetworkManager
 
   echo "Updating Grub..."
   grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian
