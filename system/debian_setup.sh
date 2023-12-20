@@ -43,7 +43,7 @@ main ()
 
 partition_setup ()
 {
-  apt install zenity -y
+  apt update && apt install zenity -y
 
   # Have the user select the disk (only include real disks)
   while true; do
@@ -354,7 +354,7 @@ EOF
 
 install_extra_packages ()
 {
-  chroot /mnt apt install firmware-iwlwifi -y
+  chroot /mnt apt update && apt install firmware-iwlwifi -y
 }
 
 unmount_base_system ()
