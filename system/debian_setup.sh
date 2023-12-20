@@ -77,6 +77,10 @@ partition_setup ()
     fi
   done
 
+  # Tell the user that the installation will begin and warn them not to stop the script
+  zenity --info --text="The installation will now begin."
+  zenity --warning --text="Do not stop the script until the installation is complete."
+
   # Create a partition table
   parted -s "$DISK" mklabel gpt
 
