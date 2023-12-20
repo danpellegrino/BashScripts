@@ -378,6 +378,9 @@ cat << EOF | chroot /mnt
 
   update-initramfs -u -k all
 EOF
+  if [ "$DEBIAN_TARGET" = "trixie" ]; then
+    chroot /mnt systemctl disable networking.service
+  fi
 }
 
 install_extra_packages ()
@@ -491,7 +494,12 @@ secure_boot ()
   # Get the kernel version
   VERSION=$(ls /mnt/lib/modules | head -n 1)
   # Get the short version
-  SHORT_VERSION=$(echo "$VERSION" | cut -d . -f 1-2)
+  if [ "$DEBIAN_TARGET" = "bookworm" ]; then
+    SHORT_VERSION=$(echo "$VERSION" | cut -d . -f 1-2)
+  else
+    # For trixie, the formatting is different
+    SHORT_VERSION=$(echo "$VERSION" | cut -d - -f 1-2)
+  fi
   # Get the modules directory
   MODULES_DIR="/lib/modules/$VERSION"
   # Get the kernel build directory
