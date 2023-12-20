@@ -328,6 +328,7 @@ install_packages ()
   echo "$TIMEZONE" > /mnt/etc/timezone
   chroot /mnt ln -sf /usr/share/zoneinfo/$(cat /mnt/etc/timezone) /etc/localtime
   chroot /mnt dpkg-reconfigure -f noninteractive tzdata
+  chroot /mnt timedatectl set-timezone $(cat /mnt/etc/timezone)
   sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /mnt/etc/locale.gen
   echo 'LANG="en_US.UTF-8"' > /mnt/etc/default/locale
   chroot /mnt dpkg-reconfigure --frontend=noninteractive locales
@@ -371,7 +372,11 @@ EOF
 
 install_extra_packages ()
 {
-  chroot /mnt apt update && apt install firmware-iwlwifi -y
+  chroot /mnt apt update
+  # Read from a file to install extra packages
+  while read -r line; do
+    chroot /mnt apt install "$line" -y
+  done < debian_setup_pkglist
 }
 
 unmount_base_system ()
