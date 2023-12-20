@@ -7,3 +7,4 @@ nvidia-cuda-mps
 nvidia-driver
 vulkan-tools
 nvidia-kernel-dkms
+gnome-core
