@@ -11,6 +11,7 @@ HOSTNAME="debian"
 USERNAME="daniel"
 NAME="Daniel Pellegrino"
 LUKS_NAME="cryptroot"
+TIMEZONE="America/New_York"
 
 main ()
 {
@@ -316,6 +317,16 @@ setup_user ()
 
 install_packages ()
 {
+  # Configure locales and timezone
+  chroot /mnt apt update && apt install -y dialog locales
+
+  chroot /mnt echo "$TIMEZONE" > /etc/timezone && \
+              dpkg-reconfigure -f noninteractive tzdata && \
+              sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+              echo 'LANG="en_US.UTF-8"'>/etc/default/locale && \
+              dpkg-reconfigure --frontend=noninteractive locales && \
+              update-locale LANG=en_US.UTF-8
+
 cat << EOF | chroot /mnt
   set -e
   apt-get update
@@ -332,17 +343,11 @@ cat << EOF | chroot /mnt
                       mtools \
                       dosfstools \
                       zstd \
-                      locales \
-                      dialog \
                       network-manager \
                       wireless-tools \
                       wpasupplicant \
                       dhcpcd5 \
                       sudo
-  
-  dpkg-reconfigure tzdata
-
-  dpkg-reconfigure locales
 
   echo "Updating Grub..."
   grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian
