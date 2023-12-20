@@ -284,11 +284,15 @@ setup_root ()
 
 setup_user ()
 {
+  # Prompt user that they'll be creating the user account
+  zenity --info --text="You will now be asked to create a user account."
+
   # Ask the user to create a password for the user account
   touch /tmp/password
   touch /tmp/verify
   chmod 600 /tmp/password
   chmod 600 /tmp/verify
+
   while true; do
     zenity --password --title="Enter User Password" \
     --timeout=60 > /tmp/password
@@ -322,10 +326,10 @@ install_packages ()
 
   chroot /mnt echo "$TIMEZONE" > /etc/timezone && \
               dpkg-reconfigure -f noninteractive tzdata && \
-              sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
-              echo 'LANG="en_US.UTF-8"'>/etc/default/locale && \
-              dpkg-reconfigure --frontend=noninteractive locales && \
-              update-locale LANG=en_US.UTF-8
+              update-locale "LANG=en_US.UTF-8" && \
+              locale-gen --purge "en_US.UTF-8" && \
+              dpkg-reconfigure --frontend=noninteractive locales
+
 
 cat << EOF | chroot /mnt
   set -e
