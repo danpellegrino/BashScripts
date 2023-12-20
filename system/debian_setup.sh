@@ -326,7 +326,7 @@ install_packages ()
   chroot /mnt apt install dialog locales
 
   echo "$TIMEZONE" > /mnt/etc/timezone
-  chroot /mnt ln -sf /usr/share/zoneinfo/$(cat /etc/timezone) /etc/localtime
+  chroot /mnt ln -sf /usr/share/zoneinfo/$(cat /mnt/etc/timezone) /etc/localtime
   chroot /mnt dpkg-reconfigure -f noninteractive tzdata
   sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /mnt/etc/locale.gen
   echo 'LANG="en_US.UTF-8"' > /mnt/etc/default/locale
