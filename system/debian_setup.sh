@@ -228,17 +228,20 @@ setup_base_system ()
 setup_network ()
 {
   echo "127.0.0.1 localhost" > /mnt/etc/hosts
-  echo "127.0.1.1 $HOSTNAME.lan $HOSTNAME" >> /mnt/etc/hosts
+  echo "127.0.1.1 $HOSTNAME" >> /mnt/etc/hosts
+  echo "" >> /mnt/etc/hosts
+  echo "# The following lines are desirable for IPv6 capable hosts" >> /mnt/etc/hosts
   echo "::1 localhost ip6-localhost ip6-loopback" >> /mnt/etc/hosts
   echo "ff02::1 ip6-allnodes" >> /mnt/etc/hosts
   echo "ff02::2 ip6-allrouters" >> /mnt/etc/hosts
 
-  # Detect the network interface
-  net_interface=$(ip link | awk '/state UP/ {print $2}' | sed 's/://')
-
   # Configure the network
-  echo "source /etc/network/interfaces.d/*" > /mnt/etc/network/interfaces
+  echo "# This file describes the network interfaces available on your system" > /mnt/etc/network/interfaces
+  echo "# and how to activate them. For more information, see interfaces(5)." >> /mnt/etc/network/interfaces
   echo "" >> /mnt/etc/network/interfaces
+  echo "source /etc/network/interfaces.d/*" >> /mnt/etc/network/interfaces
+  echo "" >> /mnt/etc/network/interfaces
+  echo "# The loopback network interface" >> /mnt/etc/network/interfaces
   echo "auto lo" >> /mnt/etc/network/interfaces
   echo "iface lo inet dhcp" >> /mnt/etc/network/interfaces
 }
