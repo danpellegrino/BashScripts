@@ -47,14 +47,33 @@ partition_setup ()
 
   # Have the user select the disk (only include real disks)
   while true; do
-    DISK=$(zenity --list --title="Select Disk" --column="Disks" $(lsblk -d -n -p -o NAME | grep -v -e "loop" -e "sr"))
-    if [ -z "$DISK" ]; then
+    # List the size of the disks
+    zenity --info --text="Select the disk you want to install Debian on. Only real disks will be shown."
+    # Get a list of available disks using lsblk and store the output in a variable
+    disks=$(lsblk -d -n -p -o NAME,SIZE | awk '{print $1 " (" $2 ")"}')
+
+    # Create an array to store individual disk entries
+    disk_list=()
+    while read -r line; do
+      disk_list+=("$line")
+    done <<< "$disks"
+    # Show a dialog with a list of disks and ask the user to select one
+    selected_disk=$(zenity --list --title="Select Disk for Debian Installation" --column="Disks" "${disk_list[@]}" --width=300 --height=300)
+
+    if [ -z "$selected_disk" ]; then
       zenity --error --text="No disk selected."
       continue
     fi
+
+    # Get the disk name from the selected disk
+    DISK=$(echo "$selected_disk" | awk '{print $1}')
     zenity --question --text="Is $DISK the correct disk?"
     if [ $? -eq 0 ]; then
-      break
+      zenity --warning --text="All data on $DISK will be erased. This cannot be undone."
+      zenity --question --title="ALL DATA ON $DISK WILL BE ERASED" --text="Are you sure you want to continue?"
+      if [ $? -eq 0 ]; then
+        break
+      fi
     fi
   done
 
