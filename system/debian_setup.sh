@@ -333,8 +333,11 @@ install_packages ()
   chroot /mnt dpkg-reconfigure --frontend=noninteractive locales
   chroot /mnt update-locale LANG=en_US.UTF-8
 
-  chroot /mnt DEBIAN_FRONTEND=noninteractive apt-get install keyboard-configuration -y
-  chroot /mnt DEBIAN_FRONTEND=noninteractive apt-get install console-setup -y
+cat << EOF | chroot /mnt
+  set -e
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install keyboard-configuration console-setup -y
+EOF
 
 cat << EOF | chroot /mnt
   set -e
