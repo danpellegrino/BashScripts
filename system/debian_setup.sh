@@ -367,8 +367,6 @@ cat << EOF | chroot /mnt
                       sudo
 
   systemctl enable NetworkManager
-  ifup -a
-  systemctl enable networking
 
   echo "Updating Grub..."
   grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian
