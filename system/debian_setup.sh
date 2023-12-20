@@ -391,7 +391,7 @@ secure_boot ()
   chroot /mnt openssl x509 -inform der -in /var/lib/shim-signed/mok/MOK.der -out /var/lib/shim-signed/mok/MOK.pem
 
   # Make sure the keys are read only by root
-  chroot /mnt chmod 400 /var/lib/shim-signed/mok/MOK.*
+  chmod 400 /mnt/var/lib/shim-signed/mok/MOK.*
 
   chroot /mnt mokutil --import /var/lib/shim-signed/mok/MOK.der
 
@@ -422,8 +422,6 @@ secure_boot ()
   export KBUILD_SIGN_PIN
 
 cat << EOF | chroot /mnt
-  set -e
-
   find "$MODULES_DIR/updates/dkms"/*.ko | while read i; do sudo --preserve-env=KBUILD_SIGN_PIN "$KBUILD_DIR"/scripts/sign-file sha256 /var/lib/shim-signed/mok/MOK.priv /var/lib/shim-signed/mok/MOK.der "$i" || break; done
 
   unset VERSION
