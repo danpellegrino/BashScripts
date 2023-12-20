@@ -428,6 +428,8 @@ secure_boot ()
   # Make sure the keys are read only by root
   chmod 400 /mnt/var/lib/shim-signed/mok/MOK.*
 
+  apt update && apt install whois -y
+
   # Prompt user that they'll be creating a MOK key pair
   zenity --info --text="You will now be asked to create a MOK key pair."
 
@@ -458,10 +460,16 @@ secure_boot ()
     zenity --error --text="Passwords do not match. Please try again."
   done
 
+  touch /mnt/var/lib/shim-signed/mok/mok_password
+  chmod 600 /mnt/var/lib/shim-signed/mok/mok_password
+  mkpasswd -m sha512crypt --stdin <<< "$(cat /tmp/password)" > /mnt/var/lib/shim-signed/mok/mok_password
+  rm /tmp/password
+  chmod 400 /mnt/var/lib/shim-signed/mok/mok_password
+
   zenity --info --text="You will now be asked to enter the MOK password again.\nYou will also be asked to enter a MOK password at next boot.\nGo to Enroll MOK in the boot menu and enter the password you created."
 
   # Import the key
-  printf '%s' "$(cat /tmp/password)" | chroot /mnt mokutil --import /var/lib/shim-signed/mok/MOK.der -
+  chroot /mnt mokutil --hash-file /var/lib/shim-signed/mok/mok_password --import /var/lib/shim-signed/mok/MOK.der
   rm /tmp/password
 
   # Adding key to DKMS (/etc/dkms/framework.conf)
