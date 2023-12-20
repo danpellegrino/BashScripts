@@ -50,7 +50,7 @@ partition_setup ()
     # List the size of the disks
     zenity --info --text="Select the disk you want to install Debian on. Only real disks will be shown."
     # Get a list of available disks using lsblk and store the output in a variable
-    disks=$(lsblk -d -n -p -o NAME,SIZE | awk '{print $1 " (" $2 ")"}')
+    disks=$(lsblk -d -n -p -o NAME,SIZE | awk '{print $1 " (" $2 ")"}' | grep -v -e "loop" -e "sr")
 
     # Create an array to store individual disk entries
     disk_list=()
