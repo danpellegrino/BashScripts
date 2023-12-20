@@ -421,24 +421,16 @@ secure_boot ()
   read -s -p "Enter the password for the key pair (MOK PEM pass phrase): " KBUILD_SIGN_PIN
   export KBUILD_SIGN_PIN
 
-cat << EOF | chroot /mnt
-  find "$MODULES_DIR/updates/dkms"/*.ko | while read i; do sudo --preserve-env=KBUILD_SIGN_PIN "$KBUILD_DIR"/scripts/sign-file sha256 /var/lib/shim-signed/mok/MOK.priv /var/lib/shim-signed/mok/MOK.der "$i" || break; done
+  find /mnt/"$MODULES_DIR/updates/dkms"/*.ko | while read i; do sudo --preserve-env=KBUILD_SIGN_PIN /mnt/"$KBUILD_DIR"/scripts/sign-file sha256 /mnt/var/lib/shim-signed/mok/MOK.priv /mnt/var/lib/shim-signed/mok/MOK.der "$i" || break; done
 
+  chroot /mnt update-initramfs -k all -u
+  
   unset VERSION
   unset SHORT_VERSION
   unset MODULES_DIR
   unset KBUILD_DIR
 
   unset KBUILD_SIGN_PIN
-
-  update-initramfs -k all -u
-EOF
-unset VERSION
-unset SHORT_VERSION
-unset MODULES_DIR
-unset KBUILD_DIR
-
-unset KBUILD_SIGN_PIN
 }
 
 unmount_base_system ()
