@@ -377,7 +377,7 @@ install_extra_packages ()
   chroot /mnt apt update
   # Read from a file to install extra packages
   while read -r line; do
-    chroot /mnt apt install "$line" -y
+    chroot /mnt sudo -E DEBIAN_FRONTEND=noninteractive apt install -y "$line"
   done < debian_setup_pkglist
 }
 
