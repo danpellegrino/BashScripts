@@ -10,6 +10,7 @@
 HOSTNAME="debian"
 USERNAME="daniel"
 NAME="Daniel Pellegrino"
+LUKS_NAME="cryptroot"
 
 main ()
 {
@@ -19,55 +20,113 @@ main ()
     exit 1
   fi
 
-  # Setup disk
-  echo "Which disk do you want to setup?"
-  lsblk
-  read -p "Enter your choice: " choice
-  disk="/dev/$choice"
-  echo "Setting up $disk"
-  echo "Creating partition table..."
-  parted -s "$disk" mklabel gpt
-  echo "Creating partition..."
-  # Create a EFI partition
-  parted -s "$disk" mkpart primary fat32 1MiB 512MiB
-  # Create a boot partition
-  parted -s "$disk" mkpart primary ext4 512MiB 1536MiB
-  # Create an encrypted btrfs partition
-  parted -s "$disk" mkpart primary btrfs 1536MiB 100%
-  echo "Setting boot flag..."
-  parted -s "$disk" set 2 boot on
+  partition_setup
 
-  # Grab the new partition names
-  # EFI partition (could be sda1, sdb1, nvme0n1p1, etc.)
-  # Boot partition (could be sda2, sdb2, nvme0n1p2, etc.)
-  # Encrypted partition (could be sda3, sdb3, nvme0n1p3, etc.)
-  lsblk "$disk"
-  # Verify partition names
+  format_and_mount
+
+  install_base_system
+
+  setup_base_system
+
+  setup_network
+
+  setup_root
+
+  setup_user
+
+  install_packages
+
+  install_extra_packages
+
+  unmount_base_system
+}
+
+partition_setup ()
+{
+  apt install zenity -y
+
+  # Have the user select the disk (only include real disks)
   while true; do
-    read -p "Enter the EFI partition name: " efi
-    read -p "Enter the boot partition name: " boot
-    read -p "Enter the encrypted partition name: " crypt
-    read -p "Are these the correct partition names? (y/n): " yn
-    case $yn in
-      [Yy]* ) break;;
-      [Nn]* ) continue;;
-      * ) echo "Please answer yes or no.";;
-    esac
+    DISK=$(zenity --list --title="Select Disk" --column="Disks" $(lsblk -d -n -p -o NAME | grep -v -e "loop" -e "sr"))
+    if [ -z "$DISK" ]; then
+      zenity --error --text="No disk selected."
+      continue
+    fi
+    zenity --question --text="Is $DISK the correct disk?"
+    if [ $? -eq 0 ]; then
+      break
+    fi
+  done
+
+  # Create a partition table
+  parted -s "$DISK" mklabel gpt
+
+  # Create a EFI partition
+  parted -s "$DISK" mkpart primary fat32 1MiB 512MiB
+
+  # Create a boot partition
+  parted -s "$DISK" mkpart primary ext4 512MiB 1536MiB
+
+  # Create an encrypted btrfs partition
+  parted -s "$DISK" mkpart primary btrfs 1536MiB 100%
+
+  # Set the boot flag
+  parted -s "$DISK" set 2 boot on
+
+  # Check to see if the disk ends in a number
+  # If it does, add a p to the end
+  if [[ "$DISK" =~ [0-9]$ ]]; then
+    EFI="$DISK""p""1"
+    BOOT="$DISK""p""2"
+    CRYPT="$DISK""p""3"
+  else
+    EFI="$DISK""1"
+    BOOT="$DISK""2"
+    CRYPT="$DISK""3"
+  fi
+
+}
+
+format_and_mount ()
+{
+  # Ask the user to create a password for the encrypted partition
+  touch /tmp/password
+  touch /tmp/verify
+  chmod 600 /tmp/password
+  chmod 600 /tmp/verify
+  while true; do
+    zenity --password --title="Enter Password" --text="Enter a password for the encrypted partition." \
+    --timeout=60 > /tmp/password
+    # Verify the password will meet the minimum requirements
+    # If it doesnt, ask the user to try again
+    if [ "$(cat /tmp/password | wc -c)" -lt 8 ]; then
+      zenity --error --text="Password must be at least 8 characters long. Please try again."
+      continue
+    fi
+    # Verify the password is correct
+    zenity --password --title="Verify Password" --text="Verify the password for the encrypted partition." \
+    --timeout=60 > /tmp/verify
+    # Compare the passwords
+    # If they match, break out of the loop
+    if [ "$(cat /tmp/password)" = "$(cat /tmp/verify)" ]; then
+      rm /tmp/verify
+      break
+    fi
+    zenity --error --text="Passwords do not match. Please try again."
   done
 
   # Format the partitions
-  echo "Formatting partitions..."
-  mkfs.fat -F32 "/dev/$efi"
-  mkfs.ext4 "/dev/$boot"
-  cryptsetup luksFormat "/dev/$crypt" # This will prompt the user to enter a password
-  cryptsetup open "/dev/$crypt" cryptroot # This will prompt the user to enter a password
-  mkfs.btrfs /dev/mapper/cryptroot
+  mkfs.fat -F32 "$EFI"
+  mkfs.ext4 "$BOOT"
+  printf '%s' "$(cat /tmp/password)" | cryptsetup luksFormat --type luks2 "$CRYPT" -
+  printf '%s' "$(cat /tmp/password)" | cryptsetup open "$CRYPT" "$LUKS_NAME" -
+  rm /tmp/password
+  mkfs.btrfs /dev/mapper/"$LUKS_NAME"
 
-  # Mount to create subvolumes
-  mount /dev/mapper/cryptroot /mnt
+   # Mount to create subvolumes
+  mount /dev/mapper/"$LUKS_NAME" /mnt
 
   # Create the subvolumes
-  echo "Creating subvolumes..."
   btrfs subvolume create /mnt/@
   btrfs subvolume create /mnt/@snapshots
   btrfs subvolume create /mnt/@home
@@ -82,40 +141,43 @@ main ()
 
   # Mount the subvolumes
   umount /mnt
-  mount -o subvol=@,noatime,compress=zstd:1 /dev/mapper/cryptroot /mnt
+  mount -o subvol=@,noatime,compress=zstd:1 /dev/mapper/"$LUKS_NAME" /mnt
   mkdir -p /mnt/{boot,.snapshots,home,root,var/log,var/lib/AccountsService,var/lib/gdm3,tmp,opt,var/lib/libvirt/images,var/lib/containers}
 
+  mount -o subvol=@snapshots,noatime,compress=zstd:1       /dev/mapper/"$LUKS_NAME" /mnt/.snapshots
+  mount -o subvol=@home,noatime,compress=zstd:1            /dev/mapper/"$LUKS_NAME" /mnt/home
+  mount -o subvol=@root,noatime,compress=zstd:1            /dev/mapper/"$LUKS_NAME" /mnt/root
+  mount -o subvol=@log,noatime,compress=zstd:1             /dev/mapper/"$LUKS_NAME" /mnt/var/log
+  mount -o subvol=@AccountsService,noatime,compress=zstd:1 /dev/mapper/"$LUKS_NAME" /mnt/var/lib/AccountsService
+  mount -o subvol=@gdm,noatime,compress=zstd:1             /dev/mapper/"$LUKS_NAME" /mnt/var/lib/gdm3
+  mount -o subvol=@tmp,noatime,compress=zstd:1             /dev/mapper/"$LUKS_NAME" /mnt/tmp
+  mount -o subvol=@opt,noatime,compress=zstd:1             /dev/mapper/"$LUKS_NAME" /mnt/opt
+  mount -o subvol=@images,noatime,compress=zstd:1          /dev/mapper/"$LUKS_NAME" /mnt/var/lib/libvirt/images
+  mount -o subvol=@containers,noatime,compress=zstd:1      /dev/mapper/"$LUKS_NAME" /mnt/var/lib/containers
+
   # Mount the boot partition
-  echo "Mounting boot partition..."
-  mount "/dev/$boot" /mnt/boot
+  mount "$BOOT" /mnt/boot
   mkdir -p /mnt/boot/efi
-  mount "/dev/$efi" /mnt/boot/efi
+  mount "$EFI" /mnt/boot/efi
 
-  # Mount the subvolumes
-  echo "Mounting subvolumes..."
-  mount -o subvol=@snapshots,noatime,compress=zstd:1 /dev/mapper/cryptroot /mnt/.snapshots
-  mount -o subvol=@home,noatime,compress=zstd:1 /dev/mapper/cryptroot /mnt/home
-  mount -o subvol=@root,noatime,compress=zstd:1 /dev/mapper/cryptroot /mnt/root
-  mount -o subvol=@log,noatime,compress=zstd:1 /dev/mapper/cryptroot /mnt/var/log
-  mount -o subvol=@AccountsService,noatime,compress=zstd:1 /dev/mapper/cryptroot /mnt/var/lib/AccountsService
-  mount -o subvol=@gdm,noatime,compress=zstd:1 /dev/mapper/cryptroot /mnt/var/lib/gdm3
-  mount -o subvol=@tmp,noatime,compress=zstd:1 /dev/mapper/cryptroot /mnt/tmp
-  mount -o subvol=@opt,noatime,compress=zstd:1 /dev/mapper/cryptroot /mnt/opt
-  mount -o subvol=@images,noatime,compress=zstd:1 /dev/mapper/cryptroot /mnt/var/lib/libvirt/images
-  mount -o subvol=@containers,noatime,compress=zstd:1 /dev/mapper/cryptroot /mnt/var/lib/containers
-
-  apt update
-
-  # Install debian
-  apt install debootstrap -y
-  debootstrap --arch amd64 stable /mnt https://deb.debian.org/debian
-
-  # Install arch-install-scripts
-  apt install arch-install-scripts -y
-
-  # Generate fstab
-  echo "Generating fstab..."
+  # Install arch-install-scripts and generate fstab
+  apt update && apt install arch-install-scripts -y
   genfstab -U /mnt >> /mnt/etc/fstab
+
+  # Set up encryption parameters
+  echo "$LUKS_NAME UUID=$(blkid -s UUID -o value $CRYPT) none luks,discard" > /mnt/etc/crypttab
+
+  # Mount virtual filesystems
+  for dir in dev proc sys run; do
+    mount --rbind /$dir /mnt/$dir && mount --make-rslave /mnt/$dir
+  done
+  cp /etc/resolv.conf /mnt/etc/resolv.conf
+}
+
+install_base_system ()
+{
+  # Install debootstrap
+  apt update && apt install debootstrap -y
 
   # Set the apt sources
   echo "deb http://deb.debian.org/debian/ bookworm main contrib non-free non-free-firmware" > /mnt/etc/apt/sources.list
@@ -123,8 +185,18 @@ main ()
   echo "deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
   echo "deb http://deb.debian.org/debian/ bookworm-backports main contrib non-free non-free-firmware" >> /mnt/etc/apt/sources.list
 
-  echo $HOSTNAME > /mnt/etc/hostname
+  # Install the base system
+  debootstrap --arch amd64 bookworm /mnt http://deb.debian.org/debian/
+}
 
+setup_base_system ()
+{
+  # Set the hostname
+  echo $HOSTNAME > /mnt/etc/hostname
+}
+
+setup_network ()
+{
   echo "127.0.0.1 localhost" > /mnt/etc/hosts
   echo "127.0.1.1 $HOSTNAME.lan $HOSTNAME" >> /mnt/etc/hosts
   echo "::1 localhost ip6-localhost ip6-loopback" >> /mnt/etc/hosts
@@ -140,32 +212,83 @@ main ()
   echo "" >> /mnt/etc/network/interfaces
   echo "auto $net_interface" >> /mnt/etc/network/interfaces
   echo "iface $net_interface inet dhcp" >> /mnt/etc/network/interfaces
+}
 
-  # Set up encryption parameters
-  echo "Setting up encryption parameters..."
-  echo "cryptroot UUID=$(blkid -s UUID -o value /dev/$crypt) none luks,discard" > /mnt/etc/crypttab
+setup_root ()
+{
+  # Ask the user if they want to be able to login as root
+  ROOT_LOGIN=$(zenity --question --text="Do you want to be able to login as root?")
+  if [ $? -eq 0 ]; then
+    # Set the root password
+    touch /tmp/password
+    touch /tmp/verify
+    chmod 600 /tmp/password
+    chmod 600 /tmp/verify
+    while true; do
+      zenity --password --title="Enter Password" --text="Enter a password for the root account." \
+      --timeout=60 > /tmp/password
+      # Verify the password will meet the minimum requirements
+      # If it doesnt, ask the user to try again
+      if [ "$(cat /tmp/password | wc -c)" -lt 8 ]; then
+        zenity --error --text="Password must be at least 8 characters long. Please try again."
+        continue
+      fi
+      # Verify the password is correct
+      zenity --password --title="Verify Password" --text="Verify the password for the root account." \
+      --timeout=60 > /tmp/verify
+      # Compare the passwords
+      # If they match, break out of the loop
+      if [ "$(cat /tmp/password)" = "$(cat /tmp/verify)" ]; then
+        rm /tmp/verify
+        break
+      fi
+      zenity --error --text="Passwords do not match. Please try again."
+    done
+    echo "root:$(cat /tmp/password)" | chroot /mnt chpasswd
+    rm /tmp/password
+    # Unlock the root account
+    chroot /mnt passwd -u root
+  else
+    # Lock the root account
+    chroot /mnt passwd -l root
+  fi
+}
 
-  # Mount virtual filesystems
-  echo "Mounting virtual filesystems..."
-  for dir in dev proc sys run; do
-    mount --rbind /$dir /mnt/$dir && mount --make-rslave /mnt/$dir
+setup_user ()
+{
+  # Ask the user to create a password for the user account
+  touch /tmp/password
+  touch /tmp/verify
+  chmod 600 /tmp/password
+  chmod 600 /tmp/verify
+  while true; do
+    zenity --password --title="Enter Password" --text="Enter a password for the user $USERNAME." \
+    --timeout=60 > /tmp/password
+    # Verify the password will meet the minimum requirements
+    # If it doesnt, ask the user to try again
+    if [ "$(cat /tmp/password | wc -c)" -lt 8 ]; then
+      zenity --error --text="Password must be at least 8 characters long. Please try again."
+      continue
+    fi
+    # Verify the password is correct
+    zenity --password --title="Verify Password" --text="Verify the password for the user $USERNAME." \
+    --timeout=60 > /tmp/verify
+    # Compare the passwords
+    # If they match, break out of the loop
+    if [ "$(cat /tmp/password)" = "$(cat /tmp/verify)" ]; then
+      rm /tmp/verify
+      break
+    fi
+    zenity --error --text="Passwords do not match. Please try again."
   done
-  cp /etc/resolv.conf /mnt/etc/resolv.conf
 
-  # Chroot into the new system
-  echo "Chrooting into the new system..."
-
-  # Set root password
-  echo "Enter the root password:"
-  chroot /mnt passwd
-
-  # Create a user
-  echo "Creating $USERNAME user..."
   chroot /mnt useradd "$USERNAME" -m -c "$NAME" -s /bin/bash
-  echo "Enter the user password:"
-  chroot /mnt passwd "$USERNAME"
+  chroot /mnt usermod -aG sudo "$USERNAME"
+  echo "$USERNAME:$(cat /tmp/password)" | chroot /mnt chpasswd
+}
 
-echo "Entering chroot, installing Linux kernel and Grub"
+install_packages ()
+{
 cat << EOF | chroot /mnt
   set -e
   apt-get update
@@ -200,9 +323,19 @@ cat << EOF | chroot /mnt
 
   update-initramfs -u -k all
 EOF
-  # Add the user to the sudo group
-  chroot /mnt /usr/sbin/usermod -aG sudo "$USERNAME"
+}
+
+install_extra_packages ()
+{
   chroot /mnt apt install firmware-iwlwifi -y
+}
+
+unmount_base_system ()
+{
+  umount -R /mnt
+  cryptsetup close "$LUKS_NAME"
+
+  zenity --info --text="Installation complete. You can now reboot."
 }
 
 main "$@"
