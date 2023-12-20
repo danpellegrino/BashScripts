@@ -1,1 +1,9 @@
 firmware-iwlwifi
+sbsigntool
+mokutil
+nvidia-settings
+nvidia-kernel-dkms
+nvidia-cuda-mps
+nvidia-driver
+vulkan-tools
+nvidia-kernel-dkms

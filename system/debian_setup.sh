@@ -39,6 +39,8 @@ main ()
 
   install_extra_packages
 
+  secure_boot
+
   unmount_base_system
 }
 
@@ -377,6 +379,47 @@ install_extra_packages ()
   while read -r line; do
     chroot /mnt apt install "$line" -y
   done < debian_setup_pkglist
+}
+
+secure_boot ()
+{
+  # Create a key pair
+  chroot /mnt openssl req -new -x509 -newkey rsa:2048 -subj "/CN=Nvidia/" -keyout /var/lib/shim-signed/mok/MOK.priv -outform DER -out /var/lib/shim-signed/mok/MOK.der -days 36500
+
+  chroot /mnt openssl x509 -inform der -in /var/lib/shim-signed/mok/MOK.der -out /var/lib/shim-signed/mok/MOK.pem
+
+  chroot /mnt mokutil --import /var/lib/shim-signed/mok/MOK.der
+
+  # Adding key to DKMS (/etc/dkms/framework.conf)
+  echo "mok_signing_key=/var/lib/shim-signed/mok/MOK.priv" >> /mnt/etc/dkms/framework.conf
+  echo "mok_certificate=/var/lib/shim-signed/mok/MOK.der" >> /mnt/etc/dkms/framework.conf
+  echo "sign_tool=/etc/dkms/sign_helper.sh" >> /mnt/etc/dkms/framework.conf
+
+  echo "/lib/modules/"$1"/build/scripts/sign-file sha512 /root/.mok/client.priv /root/.mok/client.der "$2"" > /mnt/etc/dkms/sign_helper.sh
+  chroot /mnt chmod +x /etc/dkms/sign_helper.sh
+
+cat << EOF | chroot /mnt
+  set -e
+  # Sign the Nvidia kernel module
+  VERSION="$(uname -r)"
+  SHORT_VERSION="$(uname -r | cut -d . -f 1-2)"
+  MODULES_DIR=/lib/modules/$VERSION
+  KBUILD_DIR=/usr/lib/linux-kbuild-$SHORT_VERSION
+
+  # Sign the Nvidia kernel module
+  sbsign --key /var/lib/shim-signed/mok/MOK.priv --cert /var/lib/shim-signed/mok/MOK.pem "/boot/vmlinuz-$VERSION" --output "/boot/vmlinuz-$VERSION.tmp"
+  mv "/boot/vmlinuz-$VERSION.tmp" "/boot/vmlinuz-$VERSION"
+
+  # Using your key to sign modules (Traditional Way)
+  read -s -p "Enter the password for the key pair (MOK PEM pass phrase): " KBUILD_SIGN_PIN
+  export KBUILD_SIGN_PIN
+
+  find "$MODULES_DIR/updates/dkms"/*.ko | while read i; do sudo --preserve-env=KBUILD_SIGN_PIN "$KBUILD_DIR"/scripts/sign-file sha256 /var/lib/shim-signed/mok/MOK.priv /var/lib/shim-signed/mok/MOK.der "$i" || break; done
+
+  unset KBUILD_SIGN_PIN
+
+  update-initramfs -k all -u
+EOF
 }
 
 unmount_base_system ()
