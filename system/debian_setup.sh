@@ -384,6 +384,8 @@ install_extra_packages ()
 secure_boot ()
 {
   # Create a key pair
+  mkdir -p /mnt/var/lib/shim-signed/mok
+
   chroot /mnt openssl req -new -x509 -newkey rsa:2048 -subj "/CN=Nvidia/" -keyout /var/lib/shim-signed/mok/MOK.priv -outform DER -out /var/lib/shim-signed/mok/MOK.der -days 36500
 
   chroot /mnt openssl x509 -inform der -in /var/lib/shim-signed/mok/MOK.der -out /var/lib/shim-signed/mok/MOK.pem
