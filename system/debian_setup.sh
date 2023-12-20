@@ -323,7 +323,7 @@ install_packages ()
 {
   # Configure locales and timezone
   chroot /mnt apt update
-  chroot /mnt apt install dialog locales
+  chroot /mnt apt install dialog locales -y
 
   echo "$TIMEZONE" > /mnt/etc/timezone
   chroot /mnt ln -sf /usr/share/zoneinfo/$(cat /mnt/etc/timezone) /etc/localtime
@@ -333,6 +333,8 @@ install_packages ()
   chroot /mnt dpkg-reconfigure --frontend=noninteractive locales
   chroot /mnt update-locale LANG=en_US.UTF-8
 
+  chroot /mnt DEBIAN_FRONTEND=noninteractive apt-get install keyboard-configuration -y
+  chroot /mnt DEBIAN_FRONTEND=noninteractive apt-get install console-setup -y
 
 cat << EOF | chroot /mnt
   set -e
