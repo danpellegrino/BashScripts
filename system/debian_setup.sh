@@ -9,7 +9,7 @@
 # Variables
 HOSTNAME="debian"
 USERNAME="daniel"
-NAME="Daniel Pellegrino"
+NAME="Daniel"
 LUKS_NAME="cryptroot"
 TIMEZONE="America/New_York"
 
