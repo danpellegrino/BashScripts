@@ -117,7 +117,11 @@ format_and_mount ()
 
   # Format the partitions
   mkfs.fat -F32 "$EFI"
-  mkfs.ext4 "$BOOT"
+
+  # This will give a warning if an existing filesystem is found
+  # To suppress the warning, add -F to the command
+  mkfs.ext4 -F "$BOOT"
+
   printf '%s' "$(cat /tmp/password)" | cryptsetup luksFormat --type luks2 "$CRYPT" -
   printf '%s' "$(cat /tmp/password)" | cryptsetup open "$CRYPT" "$LUKS_NAME" -
   rm /tmp/password
