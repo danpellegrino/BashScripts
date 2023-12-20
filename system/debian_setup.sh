@@ -348,6 +348,17 @@ cat << EOF | chroot /mnt
   apt-get update
   DEBIAN_FRONTEND=noninteractive apt-get install keyboard-configuration console-setup -y
 EOF
+  echo "# KEYBOARD CONFIGURATION FILE" > /mnt/etc/default/keyboard
+  echo "" >> /mnt/etc/default/keyboard
+  echo "# Consult the keyboard(5) manual page." >> /mnt/etc/default/keyboard
+  echo "" >> /mnt/etc/default/keyboard
+  echo "XKBMODEL=\"pc105\"" >> /mnt/etc/default/keyboard
+  echo "XKBLAYOUT=\"us\"" >> /mnt/etc/default/keyboard
+  echo "XKBVARIANT=\"\"" >> /mnt/etc/default/keyboard
+  echo "XKBOPTIONS=\"\"" >> /mnt/etc/default/keyboard
+  echo "" >> /mnt/etc/default/keyboard
+  echo "BACKSPACE=\"guess\"" >> /mnt/etc/default/keyboard
+  chroot /mnt dpkg-reconfigure -f noninteractive keyboard-configuration
 
 cat << EOF | chroot /mnt
   set -e
@@ -369,15 +380,21 @@ cat << EOF | chroot /mnt
                       wireless-tools \
                       wpasupplicant \
                       sudo
-
-  systemctl enable NetworkManager
-
-  echo "Updating Grub..."
-  grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian
-  update-grub
-
-  update-initramfs -u -k all
 EOF
+
+  # Change GRUB to exlude the nouveau driver
+  sed -i -e 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="quiet nouveau.modeset=0"/' /mnt/etc/default/grub
+
+  # Install grub
+  chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian
+  chroot /mnt update-grub
+
+  chroot /mnt update-initramfs -u -k all
+  # Add the nvidia driver repository
+
+  # Start/Disable services
+  chroot /mnt systemctl enable NetworkManager
+  # networking.service fails to start on trixie
   if [ "$DEBIAN_TARGET" = "trixie" ]; then
     chroot /mnt systemctl disable networking.service
   fi
@@ -505,7 +522,7 @@ secure_boot ()
   # Get the kernel build directory
   KBUILD_DIR="/usr/lib/linux-kbuild-$SHORT_VERSION"
 
-
+  # Sign the modules
   find /mnt/"$MODULES_DIR/updates/dkms"/*.ko | while read i; do sudo --preserve-env=KBUILD_SIGN_PIN /mnt/"$KBUILD_DIR"/scripts/sign-file sha256 /mnt/var/lib/shim-signed/mok/MOK.priv /mnt/var/lib/shim-signed/mok/MOK.der "$i" || break; done
 
   unset KBUILD_SIGN_PIN
