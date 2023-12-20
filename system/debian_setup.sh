@@ -365,6 +365,14 @@ cat << EOF | chroot /mnt
                       dhcpcd5 \
                       sudo
 
+  # Fix the network
+  apt remove --purge -y ifupdown
+  apt autoremove --purge -y
+  systemctl enable --now NetworkManager
+  # Update NetworkManager.conf
+  sed -i -e 's/managed=false/managed=true/' /etc/NetworkManager/NetworkManager.conf
+  
+
   echo "Updating Grub..."
   grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian
   update-grub
