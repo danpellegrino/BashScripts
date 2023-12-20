@@ -322,13 +322,16 @@ setup_user ()
 install_packages ()
 {
   # Configure locales and timezone
-  chroot /mnt apt update && apt install -y dialog locales
+  chroot /mnt apt update
+  chroot /mnt apt install dialog locales
 
-  chroot /mnt echo "$TIMEZONE" > /etc/timezone && \
-              dpkg-reconfigure -f noninteractive tzdata && \
-              update-locale "LANG=en_US.UTF-8" && \
-              locale-gen --purge "en_US.UTF-8" && \
-              dpkg-reconfigure --frontend=noninteractive locales
+  echo "$TIMEZONE" > /mnt/etc/timezone
+  chroot /mnt ln -sf /usr/share/zoneinfo/$(cat /etc/timezone) /etc/localtime
+  chroot /mnt dpkg-reconfigure -f noninteractive tzdata
+  sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /mnt/etc/locale.gen
+  echo 'LANG="en_US.UTF-8"' > /mnt/etc/default/locale
+  chroot /mnt dpkg-reconfigure --frontend=noninteractive locales
+  chroot /mnt update-locale LANG=en_US.UTF-8
 
 
 cat << EOF | chroot /mnt
