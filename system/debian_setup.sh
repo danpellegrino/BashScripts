@@ -95,7 +95,7 @@ format_and_mount ()
   chmod 600 /tmp/password
   chmod 600 /tmp/verify
   while true; do
-    zenity --password --title="Enter Password" --text="Enter a password for the encrypted partition." \
+    zenity --password --title="Enter Encryption Password" \
     --timeout=60 > /tmp/password
     # Verify the password will meet the minimum requirements
     # If it doesnt, ask the user to try again
@@ -104,7 +104,7 @@ format_and_mount ()
       continue
     fi
     # Verify the password is correct
-    zenity --password --title="Verify Password" --text="Verify the password for the encrypted partition." \
+    zenity --password --title="Verify Encryption Password" \
     --timeout=60 > /tmp/verify
     # Compare the passwords
     # If they match, break out of the loop
@@ -225,7 +225,7 @@ setup_root ()
     chmod 600 /tmp/password
     chmod 600 /tmp/verify
     while true; do
-      zenity --password --title="Enter Password" --text="Enter a password for the root account." \
+      zenity --password --title="Enter Root Password" \
       --timeout=60 > /tmp/password
       # Verify the password will meet the minimum requirements
       # If it doesnt, ask the user to try again
@@ -234,7 +234,7 @@ setup_root ()
         continue
       fi
       # Verify the password is correct
-      zenity --password --title="Verify Password" --text="Verify the password for the root account." \
+      zenity --password --title="Verify Root Password" \
       --timeout=60 > /tmp/verify
       # Compare the passwords
       # If they match, break out of the loop
@@ -262,7 +262,7 @@ setup_user ()
   chmod 600 /tmp/password
   chmod 600 /tmp/verify
   while true; do
-    zenity --password --title="Enter Password" --text="Enter a password for the user $USERNAME." \
+    zenity --password --title="Enter User Password" \
     --timeout=60 > /tmp/password
     # Verify the password will meet the minimum requirements
     # If it doesnt, ask the user to try again
@@ -271,7 +271,7 @@ setup_user ()
       continue
     fi
     # Verify the password is correct
-    zenity --password --title="Verify Password" --text="Verify the password for the user $USERNAME." \
+    zenity --password --title="Verify User Password" \
     --timeout=60 > /tmp/verify
     # Compare the passwords
     # If they match, break out of the loop
