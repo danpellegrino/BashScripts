@@ -470,7 +470,6 @@ secure_boot ()
 
   # Import the key
   chroot /mnt mokutil --hash-file /var/lib/shim-signed/mok/mok_password --import /var/lib/shim-signed/mok/MOK.der
-  rm /tmp/password
 
   # Adding key to DKMS (/etc/dkms/framework.conf)
   echo "mok_signing_key=/var/lib/shim-signed/mok/MOK.priv" >> /mnt/etc/dkms/framework.conf
