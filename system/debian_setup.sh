@@ -400,32 +400,48 @@ secure_boot ()
   echo "/lib/modules/"$1"/build/scripts/sign-file sha512 /root/.mok/client.priv /root/.mok/client.der "$2"" > /mnt/etc/dkms/sign_helper.sh
   chroot /mnt chmod +x /etc/dkms/sign_helper.sh
 
-cat << EOF | chroot /mnt
-  set -e
-  
   # Get the kernel version
-  VERSION=\$(ls /lib/modules | head -n 1)
+  VERSION=$(ls /mnt/lib/modules | head -n 1)
   # Get the short version
-  SHORT_VERSION=\$(echo "\$VERSION" | cut -d . -f 1-2)
+  SHORT_VERSION=$(echo "$VERSION" | cut -d . -f 1-2)
   # Get the modules directory
-  MODULES_DIR="/lib/modules/\$VERSION"
+  MODULES_DIR="/lib/modules/$VERSION"
   # Get the kernel build directory
-  KBUILD_DIR="/usr/lib/linux-kbuild-\$SHORT_VERSION"
+  KBUILD_DIR="/usr/lib/linux-kbuild-$SHORT_VERSION"
 
-  # Sign the Nvidia kernel module
-  sbsign --key /var/lib/shim-signed/mok/MOK.priv --cert /var/lib/shim-signed/mok/MOK.pem "/boot/vmlinuz-$VERSION" --output "/boot/vmlinuz-$VERSION.tmp"
-  mv "/boot/vmlinuz-$VERSION.tmp" "/boot/vmlinuz-$VERSION"
+  export VERSION
+  export SHORT_VERSION
+  export MODULES_DIR
+  export KBUILD_DIR
 
   # Using your key to sign modules (Traditional Way)
   read -s -p "Enter the password for the key pair (MOK PEM pass phrase): " KBUILD_SIGN_PIN
   export KBUILD_SIGN_PIN
 
+cat << EOF | chroot /mnt
+  set -e
+
+  # Sign the Nvidia kernel module
+  printf '%s' "$KBUILD_SIGN_PIN" | sbsign --key /var/lib/shim-signed/mok/MOK.priv --cert /var/lib/shim-signed/mok/MOK.pem "/boot/vmlinuz-$VERSION" --output "/boot/vmlinuz-$VERSION.tmp" -
+  mv "/boot/vmlinuz-$VERSION.tmp" "/boot/vmlinuz-$VERSION"
+
   find "$MODULES_DIR/updates/dkms"/*.ko | while read i; do sudo --preserve-env=KBUILD_SIGN_PIN "$KBUILD_DIR"/scripts/sign-file sha256 /var/lib/shim-signed/mok/MOK.priv /var/lib/shim-signed/mok/MOK.der "$i" || break; done
+
+  unset VERSION
+  unset SHORT_VERSION
+  unset MODULES_DIR
+  unset KBUILD_DIR
 
   unset KBUILD_SIGN_PIN
 
   update-initramfs -k all -u
 EOF
+unset VERSION
+unset SHORT_VERSION
+unset MODULES_DIR
+unset KBUILD_DIR
+
+unset KBUILD_SIGN_PIN
 }
 
 unmount_base_system ()
