@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-# debian_setup.sh
+# install.sh
  # Author: Daniel Pellegrino
  # Date Created: 12/18/2023
- # Last Modified: 12/18/2023
- # Description: This script will install debian using debootstrap.
+ # Last Modified: 12/20/2023
+ # Description: This script will install debian bookworm or trixie using debootstrap.
 
 main ()
 {

@@ -17,7 +17,7 @@ This repository contains a collection of custom Bash scripts for various purpose
 ### 2. `automation/`
 
 ### 3. `system/`
-- `debian_setup.sh`: Installs Debian 12 (Bookworm) Using BTRFS and LUKS Encryption.
+- `debian_install/`: Installs Debian Bookworm or Trixie Using BTRFS and LUKS Encryption. Run with the install.sh script.
 - `kernel-update-sign-modules.sh`: Resigns my Secure Boot Keys after a Kernel Update. 
 - `secureboot_nvidia_setup.sh`: Initial setup for my secureboot keys with the NVIDIA drivers (requires reboot and to be ran twice).
 - `qemu_setup.sh`: Automates the setup process for creating virtual machines (qemu, virsh, virt-manager).

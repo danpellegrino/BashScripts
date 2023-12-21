@@ -2,9 +2,9 @@
 
 # custom_setup.sh
  # Author: Daniel Pellegrino
- # Date Created: 12/18/2023
- # Last Modified: 12/18/2023
- # Description: This does everything post initial Debian install.
+ # Date Created: 12/20/2023
+ # Last Modified: 12/20/2023
+ # Description: This does everything post initial install script to setup it up as my personal system.
 
 main ()
 {

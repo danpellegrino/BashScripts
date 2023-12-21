@@ -2,8 +2,8 @@
 
 # environment_variables.sh
  # Author: Daniel Pellegrino
- # Date Created: 12/18/2023
- # Last Modified: 12/18/2023
+ # Date Created: 12/20/2023
+ # Last Modified: 12/20/2023
  # Description: Creates environment variables used accross the scripts.
 
 # Variables
