@@ -365,6 +365,9 @@ EOF
   echo "XKBOPTIONS=\"\"" >> /mnt/etc/default/keyboard
   echo "" >> /mnt/etc/default/keyboard
   echo "BACKSPACE=\"guess\"" >> /mnt/etc/default/keyboard
+  echo "" >> /mnt/etc/default/keyboard
+  echo "KEYMAP=\"us\"" >> /mnt/etc/default/keyboard
+  echo "FONT=\"ter-v32b\"" >> /mnt/etc/default/keyboard
   chroot /mnt dpkg-reconfigure -f noninteractive keyboard-configuration
 
 cat << EOF | chroot /mnt
