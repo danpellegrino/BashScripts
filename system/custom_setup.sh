@@ -46,6 +46,8 @@ install_packages ()
 {
   # Install the packages
   while read -r line; do
+    # Skip comments (they follow after the package name)
+    package=$(echo "$line" | cut -d '#' -f 1)
     chroot /mnt sudo -E DEBIAN_FRONTEND=noninteractive apt install -y "$line"
   done < debian_setup_pkglist
 }
