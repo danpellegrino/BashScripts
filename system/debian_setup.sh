@@ -28,8 +28,8 @@ main ()
   else
     chmod +x custom_setup.sh
   fi
-  if [ ! -f debian_setup_pkglist ]; then
-    echo "debian_setup_pkglist not found. Exiting."
+  if [ ! -f pkglist.csv ]; then
+    echo "pkglist.csv not found. Exiting."
     exit 1
   fi
 

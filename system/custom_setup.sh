@@ -22,8 +22,8 @@ main ()
     chmod +x environment_variables.sh
     source environment_variables.sh
   fi
-  if [ ! -f debian_setup_pkglist ]; then
-    echo "debian_setup_pkglist not found. Exiting."
+  if [ ! -f pkglist.csv ]; then
+    echo "pkglist.csv not found. Exiting."
     exit 1
   fi
 
@@ -46,10 +46,11 @@ install_packages ()
 {
   # Install the packages
   while read -r line; do
-    # Skip comments (they follow after the package name)
-    package=$(echo "$line" | cut -d '#' -f 1)
+    # The first field is the package name and the second field is the description
+    # The description is ignored
+    package=$(echo "$line" | cut -d , -f 1)
     chroot /mnt sudo -E DEBIAN_FRONTEND=noninteractive apt install -y "$package"
-  done < debian_setup_pkglist
+  done < pkglist.csv
 }
 
 # Functions
