@@ -30,7 +30,7 @@ install_packages ()
     # The description is ignored
     package=$(echo "$line" | cut -d , -f 1)
     chroot /mnt sudo -E DEBIAN_FRONTEND=noninteractive apt install -y "$package"
-  done < pkglist.csv
+  done < custom/pkglist.csv
 }
 
 # Functions
