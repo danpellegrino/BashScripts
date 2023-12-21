@@ -8,6 +8,12 @@
 
 main ()
 {
+  # Check if the script is being run by the install.sh script.
+  if [[ $RUN != 1 ]]; then
+    echo "Please run the script with the install.sh script."
+    exit 1
+  fi
+
   # Check if the user is root
   if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root"
@@ -15,12 +21,12 @@ main ()
   fi
 
   # Verify the user has all the scripts needed
-  if [ ! -f environment_variables.sh ]; then
+  if [ ! -f ../environment_variables.sh ]; then
     echo "environment_variables.sh not found. Exiting."
     exit 1
   else
-    chmod +x environment_variables.sh
-    source environment_variables.sh
+    chmod +x ../environment_variables.sh
+    source ../environment_variables.sh
   fi
   if [ ! -f pkglist.csv ]; then
     echo "pkglist.csv not found. Exiting."

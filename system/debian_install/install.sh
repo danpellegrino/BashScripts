@@ -8,6 +8,12 @@
 
 main ()
 {
+
+  # This is to tell the other scripts that this script is running
+  # as the other ones shouldn't run on their own
+  RUN=1
+  export RUN
+
   # Check if user is root
   if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root"
@@ -22,14 +28,14 @@ main ()
     chmod +x environment_variables.sh
     source environment_variables.sh
   fi
-  if [ ! -f custom_setup.sh ]; then
-    echo "custom_setup.sh not found. Exiting."
+  if [ ! -f custom/custom_setup.sh ]; then
+    echo "custom/custom_setup.sh not found. Exiting."
     exit 1
   else
-    chmod +x custom_setup.sh
+    chmod +x custom/custom_setup.sh
   fi
-  if [ ! -f pkglist.csv ]; then
-    echo "pkglist.csv not found. Exiting."
+  if [ ! -f custom/pkglist.csv ]; then
+    echo "custom/pkglist.csv not found. Exiting."
     exit 1
   fi
 
@@ -50,6 +56,8 @@ main ()
   install_packages
 
   extra_packages_prompt
+
+  unset RUN
 }
 
 partition_setup ()
@@ -414,7 +422,7 @@ extra_packages_prompt ()
 {
   zenity --question --text="The base system has been installed. Anything further is customized towards my setup. Do you want to continue?"
   if [ "$?" -eq 0 ]; then
-    source custom_setup.sh
+    source custom/custom_setup.sh
     unmount_base_system
   else 
     unmount_base_system
