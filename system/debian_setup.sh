@@ -6,13 +6,23 @@
  # Last Modified: 12/18/2023
  # Description: This script will install debian using debootstrap.
 
-source environment_variables.sh
-
 main ()
 {
   # Check if user is root
   if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root"
+    exit 1
+  fi
+
+  # Verify the user has all the scripts needed
+  if [ ! -f environment_variables.sh ]; then
+    echo "environment_variables.sh not found. Exiting."
+    exit 1
+  else
+    source environment_variables.sh
+  fi
+  if [ ! -f custom_setup.sh ]; then
+    echo "custom_setup.sh not found. Exiting."
     exit 1
   fi
 

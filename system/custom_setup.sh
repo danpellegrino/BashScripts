@@ -6,8 +6,6 @@
  # Last Modified: 12/18/2023
  # Description: This does everything post initial Debian install.
 
-source environment_variables.sh
-
 main ()
 {
   # Check if the user is root
@@ -15,6 +13,19 @@ main ()
     echo "This script must be run as root"
     exit 1
   fi
+
+  # Verify the user has all the scripts needed
+  if [ ! -f environment_variables.sh ]; then
+    echo "environment_variables.sh not found. Exiting."
+    exit 1
+  else
+    source environment_variables.sh
+  fi
+  if [ ! -f debian_setup_pkglist ]; then
+    echo "debian_setup_pkglist not found. Exiting."
+    exit 1
+  fi
+
   
   # Verify the chroot environment exists
   if [[ ! -d /mnt ]]; then
@@ -32,12 +43,6 @@ main ()
 
 install_packages ()
 {
-  # Check if the package list exists
-  if [[ ! -f debian_setup_pkglist ]]; then
-    echo "The package list does not exist. Please create a file named debian_setup_pkglist"
-    exit 1
-  fi
-
   # Install the packages
   while read -r line; do
     chroot /mnt sudo -E DEBIAN_FRONTEND=noninteractive apt install -y "$line"
