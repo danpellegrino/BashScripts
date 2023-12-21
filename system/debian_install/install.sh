@@ -411,6 +411,7 @@ EOF
   # Add the nvidia driver repository
 
   # Start/Disable services
+  chroot /mnt systemctl restart console-setup.service
   chroot /mnt systemctl enable NetworkManager
   # networking.service fails to start on trixie
   if [ "$DEBIAN_TARGET" = "trixie" ]; then
