@@ -28,6 +28,10 @@ main ()
   else
     chmod +x custom_setup.sh
   fi
+  if [ ! -f debian_setup_pkglist ]; then
+    echo "debian_setup_pkglist not found. Exiting."
+    exit 1
+  fi
 
   partition_setup
 
