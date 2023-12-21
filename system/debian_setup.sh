@@ -19,11 +19,14 @@ main ()
     echo "environment_variables.sh not found. Exiting."
     exit 1
   else
+    chmod +x environment_variables.sh
     source environment_variables.sh
   fi
   if [ ! -f custom_setup.sh ]; then
     echo "custom_setup.sh not found. Exiting."
     exit 1
+  else
+    chmod +x custom_setup.sh
   fi
 
   partition_setup

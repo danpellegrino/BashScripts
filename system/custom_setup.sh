@@ -19,6 +19,7 @@ main ()
     echo "environment_variables.sh not found. Exiting."
     exit 1
   else
+    chmod +x environment_variables.sh
     source environment_variables.sh
   fi
   if [ ! -f debian_setup_pkglist ]; then
