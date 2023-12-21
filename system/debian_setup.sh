@@ -409,7 +409,7 @@ EOF
 
 extra_packages_prompt ()
 {
-  zenity --question --text="The base system has been installed. Anything further is customized towards my setup."
+  zenity --question --text="The base system has been installed. Anything further is customized towards my setup. Do you want to continue?"
   if [ "$?" -eq 0 ]; then
     source custom_setup.sh
     unmount_base_system
