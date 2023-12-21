@@ -19,6 +19,8 @@ main ()
 
   install_packages
 
+  zsh_setup
+
   secureboot
 }
 
@@ -31,6 +33,12 @@ install_packages ()
     package=$(echo "$line" | cut -d , -f 1)
     chroot /mnt sudo -E DEBIAN_FRONTEND=noninteractive apt install -y "$package"
   done < custom/pkglist.csv
+}
+
+zsh_setup ()
+{
+  # Install oh-my-zsh
+  chroot /mnt sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 }
 
 # Functions
