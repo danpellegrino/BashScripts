@@ -8,3 +8,7 @@ nvidia-driver,required for nvidia
 vulkan-tools,required for nvidia
 gnome-core,a desktop environment
 synaptic,a package manager
+alacritty,a terminal emulator
+zsh,a shell
+curl,a command line tool
+git,a version control system
