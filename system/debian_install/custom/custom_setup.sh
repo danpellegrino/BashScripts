@@ -19,11 +19,17 @@ main ()
 
   install_packages
 
+  font_setup
+
   zsh_setup
 
   wayland_setup
 
+  auto_login
+
   kernel_parameters
+
+  dotfiles
 
   secureboot
 }
@@ -39,6 +45,21 @@ install_packages ()
   done < custom/pkglist.csv
 }
 
+font_setup ()
+{
+  apt install -y wget
+
+  # Get the FiraCode Nerd Font
+  wget -P /mnt/tmp https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/FiraCode.tar.xz
+  mkdir -p /mnt/usr/share/fonts/truetype/firacode
+
+  # Extract the tarball
+  tar -xf /mnt/tmp/FiraCode.tar.xz -C /mnt/usr/share/fonts/truetype/firacode
+
+  # Refresh the font cache
+  fc-cache -f -v
+}
+
 zsh_setup ()
 {
   # Install oh-my-zsh
@@ -48,9 +69,19 @@ zsh_setup ()
 wayland_setup ()
 {
   # Getting NVIDIA drivers to work with Wayland for Debian
-
   # Create a symlink to the NVIDIA driver
   ln -s /dev/null /etc/udev/rules.d/61-gdm.rules
+
+  # I still want GDM to use X11 however
+  # So I need to edit the GDM config file
+  sed -i -e 's/#WaylandEnable=false/WaylandEnable=false/' /mnt/etc/gdm3/daemon.conf
+}
+
+auto_login ()
+{
+  # Enable auto login
+  sed -i -e 's/#  AutomaticLoginEnable = true/AutomaticLoginEnable = true/' /mnt/etc/gdm3/custom.conf
+  sed -i -e 's/#  AutomaticLogin = user1/AutomaticLogin = daniel/' /mnt/etc/gdm3/custom.conf
 }
 
 kernel_parameters ()
@@ -61,6 +92,16 @@ kernel_parameters ()
 
   # Update GRUB
   chroot /mnt update-grub
+}
+
+dotfiles ()
+{
+  # Clone the dotfiles repo
+  #chroot /mnt git clone [REPO_URL] /tmp/dotfiles
+  
+  # Copy the dotfiles to the home directory
+  #chroot /mnt cp -r /tmp/dotfiles/. /home/daniel
+
 }
 
 # Functions
