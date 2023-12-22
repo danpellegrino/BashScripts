@@ -17,3 +17,6 @@ feh,a wallpaper setter
 fzf,a fuzzy finder
 compton,a compositor
 pavucontrol,a volume control
+sxhkd,a hotkey daemon
+fonts-ubuntu,a font package
+solaar,a logitech device manager
