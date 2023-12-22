@@ -21,6 +21,10 @@ main ()
 
   zsh_setup
 
+  wayland_setup
+
+  kernel_parameters
+
   secureboot
 }
 
@@ -39,6 +43,24 @@ zsh_setup ()
 {
   # Install oh-my-zsh
   chroot /mnt sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+}
+
+wayland_setup ()
+{
+  # Getting NVIDIA drivers to work with Wayland for Debian
+
+  # Create a symlink to the NVIDIA driver
+  ln -s /dev/null /etc/udev/rules.d/61-gdm.rules
+}
+
+kernel_parameters ()
+{
+  # Change GRUB to exlude the nouveau driver
+  # Then set the NVIDIA-drm.modeset=1 kernel parameter (this is to get wayland to work)
+  sed -i -e 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="quiet nouveau.modeset=0 nvidia-drm.modeset=1"/' /mnt/etc/default/grub
+
+  # Update GRUB
+  chroot /mnt update-grub
 }
 
 # Functions

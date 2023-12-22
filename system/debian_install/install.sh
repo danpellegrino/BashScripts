@@ -400,9 +400,6 @@ cat << EOF | chroot /mnt
                       sudo
 EOF
 
-  # Change GRUB to exlude the nouveau driver
-  sed -i -e 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="quiet nouveau.modeset=0"/' /mnt/etc/default/grub
-
   # Install grub
   chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian
   chroot /mnt update-grub
