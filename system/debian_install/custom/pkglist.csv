@@ -12,3 +12,8 @@ alacritty,a terminal emulator
 zsh,a shell
 curl,a command line tool
 git,a version control system
+i3,a window manager
+feh,a wallpaper setter
+fzf,a fuzzy finder
+compton,a compositor
+pavucontrol,a volume control
