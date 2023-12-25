@@ -11,6 +11,7 @@ synaptic,a package manager
 alacritty,a terminal emulator
 zsh,a shell
 curl,a command line tool
+wget,a command line tool
 git,a version control system
 i3,a window manager
 feh,a wallpaper setter

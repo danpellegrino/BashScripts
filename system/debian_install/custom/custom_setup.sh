@@ -23,6 +23,8 @@ main ()
 
   zsh_setup
 
+  language_setup
+
   wayland_setup
 
   auto_login
@@ -58,6 +60,44 @@ font_setup ()
 
   # Refresh the font cache
   fc-cache -f -v
+}
+
+language_setup ()
+{
+  # Install the following programming languages
+  # rust
+  chroot /mnt curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  # go
+  chroot /mnt wget -P /tmp https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+  chroot /mnt tar -xzf /tmp/go1.21.5.linux-amd64.tar.gz -C /usr/local
+  # python
+  # nodejs
+  # javascript
+  # typescript
+  # c\c++
+  # java
+  # php
+  # ruby
+  # perl
+  # haskell
+  # lua
+  # lisp
+  # ocaml
+  # scala
+  # clojure
+  # racket
+  # julia
+  # nim
+  # kotlin
+  # dart
+  # elixir
+  # erlang
+  # crystal
+  # racket
+  # scheme
+  # fortran
+  # ada
+  # assembly
 }
 
 zsh_setup ()
