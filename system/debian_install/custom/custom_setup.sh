@@ -71,9 +71,50 @@ language_setup ()
   chroot /mnt wget -P /tmp https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
   chroot /mnt tar -xzf /tmp/go1.21.5.linux-amd64.tar.gz -C /usr/local
   # python
+  # Python is already installed
+
   # nodejs
+
+  # nodejs should not be installed as root so we need to switch to the user
+  chroot /mnt su - daniel
+  chroot /mnt mkdir -p /etc/apt/keyrings
+  # You'll need to run the following command as root
+  chroot /mnt exit
+  chroot /mnt curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+
+  # Go back to the user
+  chroot /mnt su - daniel
+  NODE_MAJOR=20
+  export NODE_MAJOR
+  chroot /mnt echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+  chroot /mnt exit
+  chroot /mnt apt-get install nodejs -y
+
   # javascript
-  # typescript
+  #
+  # Install the following javascript packages
+
+  # 1. eslint
+  
+  # You shouldn't install npm as root so we need to switch to the user
+  chroot /mnt su - daniel
+  chroot /mnt npm install -g eslint
+  chroot /mnt exit
+
+  # 2. prettier
+  
+  # You shouldn't install npm as root so we need to switch to the user
+  chroot /mnt su - daniel
+  chroot /mnt npm install -g prettier
+  chroot /mnt exit
+
+  # 3. typescript
+
+  # You shouldn't install npm as root so we need to switch to the user
+  chroot /mnt su - daniel
+  chroot /mnt npm install -g typescript
+  chroot /mnt exit
+
   # c\c++
   # java
   # php
@@ -98,6 +139,9 @@ language_setup ()
   # fortran
   # ada
   # assembly
+  
+
+  unset NODE_MAJOR
 }
 
 zsh_setup ()
