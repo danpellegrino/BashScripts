@@ -23,4 +23,4 @@ fonts-ubuntu,a font package
 solaar,a logitech device manager
 ca-certificates,a certificate manager
 gnupg,a gpg key manager
-
+stow, symlink farm manager
