@@ -19,6 +19,8 @@ main ()
 
   install_packages
 
+  flatpak_setup
+
   font_setup
 
   zsh_setup
@@ -45,6 +47,32 @@ install_packages ()
     package=$(echo "$line" | cut -d , -f 1)
     chroot /mnt sudo -E DEBIAN_FRONTEND=noninteractive apt install -y "$package"
   done < custom/pkglist.csv
+}
+
+flatpak_setup ()
+{
+  # Install flatpak
+  chroot /mnt apt install flatpak -y
+
+  # Add the flathub repo
+  chroot /mnt flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+  # Switch to the user
+  chroot /mnt su - daniel
+
+  # Update flatpak
+  chroot /mnt flatpak update -y
+
+  # Install the following flatpak packages
+  while read -r line; do
+    # The first field is the package name and the second field is the description
+    # The description is ignored
+    package=$(echo "$line" | cut -d , -f 1)
+    chroot /mnt flatpak install -y flathub "$package"
+  done < custom/flatpaklist.csv
+
+  # Go back to root
+  chroot /mnt exit
 }
 
 font_setup ()
