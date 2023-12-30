@@ -33,6 +33,8 @@ main ()
 
   kernel_parameters
 
+  tmux_setup
+
   dotfiles
 
   secureboot
@@ -88,6 +90,12 @@ font_setup ()
 
   # Refresh the font cache
   fc-cache -f -v
+}
+
+zsh_setup ()
+{
+  # Install oh-my-zsh
+  chroot /mnt sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 }
 
 language_setup ()
@@ -172,12 +180,6 @@ language_setup ()
   unset NODE_MAJOR
 }
 
-zsh_setup ()
-{
-  # Install oh-my-zsh
-  chroot /mnt sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-}
-
 wayland_setup ()
 {
   # Getting NVIDIA drivers to work with Wayland for Debian
@@ -204,6 +206,15 @@ kernel_parameters ()
 
   # Update GRUB
   chroot /mnt update-grub
+}
+
+tmux_setup ()
+{
+  # Install TPM
+  # You shouldn't install git as root so we need to switch to the user
+  chroot /mnt su - daniel
+  git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+  chroot /mnt exit
 }
 
 dotfiles ()
