@@ -1,0 +1,3 @@
+[submodule "system/DebianInstall"]
+	path = system/DebianInstall
+	url = git@github.com:danpellegrino/DebianInstall.git
